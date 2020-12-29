@@ -81,6 +81,7 @@ export class EchoServer {
      * Start the Echo Server.
      */
     run(options: any): Promise<any> {
+        console.log('run')
         return new Promise((resolve, reject) => {
             this.options = Object.assign(this.defaultOptions, options);
             this.startup();
@@ -99,6 +100,7 @@ export class EchoServer {
      * Initialize the class
      */
     init(io: any): Promise<any> {
+        console.log('init')
         return new Promise((resolve, reject) => {
             this.channel = new Channel(io, this.options);
 
@@ -120,6 +122,7 @@ export class EchoServer {
      * Text shown at startup.
      */
     startup(): void {
+        console.log('startup')
         Log.title(`\nL A R A V E L  E C H O  S E R V E R\n`);
         Log.info(`version ${packageFile.version}\n`);
 
@@ -134,6 +137,7 @@ export class EchoServer {
      * Stop the echo server.
      */
     stop(): Promise<any> {
+        console.log('stop')
         console.log('Stopping the LARAVEL ECHO SERVER')
         let promises = [];
         this.subscribers.forEach(subscriber => {
@@ -150,6 +154,7 @@ export class EchoServer {
      * Listen for incoming event from subscibers.
      */
     listen(): Promise<any> {
+        console.log('listen')
         return new Promise((resolve, reject) => {
             let subscribePromises = this.subscribers.map(subscriber => {
                 return subscriber.subscribe((channel, message) => {
@@ -165,6 +170,7 @@ export class EchoServer {
      * Return a channel by its socket id.
      */
     find(socket_id: string): any {
+        console.log('find')
         return this.server.io.sockets.connected[socket_id];
     }
 
@@ -172,6 +178,7 @@ export class EchoServer {
      * Broadcast events to channels from subscribers.
      */
     broadcast(channel: string, message: any): boolean {
+        console.log('broadcast')
         if (message.socket && this.find(message.socket)) {
             return this.toOthers(this.find(message.socket), channel, message);
         } else {
@@ -183,6 +190,7 @@ export class EchoServer {
      * Broadcast to others on channel.
      */
     toOthers(socket: any, channel: string, message: any): boolean {
+        console.log('toOthers')
         socket.broadcast.to(channel)
             .emit(message.event, channel, message.data);
 
@@ -193,6 +201,7 @@ export class EchoServer {
      * Broadcast to all members on channel.
      */
     toAll(channel: string, message: any): boolean {
+        console.log('toAll')
         this.server.io.to(channel)
             .emit(message.event, channel, message.data);
 
@@ -204,6 +213,7 @@ export class EchoServer {
      */
     onConnect(): void {
         this.server.io.on('connection', socket => {
+        console.log('onConnect')
             this.onSubscribe(socket);
             this.onUnsubscribe(socket);
             this.onDisconnecting(socket);
@@ -215,7 +225,9 @@ export class EchoServer {
      * On subscribe to a channel.
      */
     onSubscribe(socket: any): void {
+        console.log('onSubscribe before on')
         socket.on('subscribe', data => {
+        console.log('onSubscribe after on')
             this.channel.join(socket, data);
         });
     }
@@ -225,6 +237,7 @@ export class EchoServer {
      */
     onUnsubscribe(socket: any): void {
         socket.on('unsubscribe', data => {
+        console.log('onUnsubscribe')
             this.channel.leave(socket, data.channel, 'unsubscribed');
         });
     }
@@ -234,6 +247,7 @@ export class EchoServer {
      */
     onDisconnecting(socket: any): void {
         socket.on('disconnecting', (reason) => {
+        console.log('onDisconnecting')
             Object.keys(socket.rooms).forEach(room => {
                 if (room !== socket.id) {
                     this.channel.leave(socket, room, reason);
@@ -247,6 +261,7 @@ export class EchoServer {
      */
     onClientEvent(socket: any): void {
         socket.on('client event', data => {
+        console.log('onClientEvent')
             this.channel.clientEvent(socket, data);
         });
     }

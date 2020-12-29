@@ -98,6 +98,7 @@ export class Server {
      * @return {any}
      */
     httpServer(secure: boolean) {
+        console.log('httpServer')
         this.express = express();
         this.express.use((req, res, next) => {
             for (var header in this.options.headers) {
@@ -123,6 +124,7 @@ export class Server {
      * Attach global protection to HTTP routes, to verify the API key.
      */
     authorizeRequests(): void {
+        console.log('authorizeRequests')
         this.express.param('appId', (req, res, next) => {
             if (!this.canAccess(req)) {
                 return this.unauthorizedResponse(req, res);
