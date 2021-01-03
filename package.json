@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.14.149",
-    "@types/node": "^13.9.1",
+    "@types/node": "^13.13.38",
     "typescript": "^3.8.3"
   },
   "peerDependecies": {

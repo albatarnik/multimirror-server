@@ -37,4 +37,18 @@ export class RedisDatabase implements DatabaseDriver {
             }));
         }
     }
+
+    /**
+     * Increment value of a specific key by 1.
+     */
+    incr(key: string): void {
+        this._redis.incr(key);
+    }
+
+    /**
+     * Decrement value of a specific key by 1.
+     */
+    decr(key: string): void {
+        this._redis.decr(key);
+    }
 }

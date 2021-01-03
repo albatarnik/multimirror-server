@@ -38,4 +38,18 @@ export class Database implements DatabaseDriver {
     set(key: string, value: any): void {
         this.driver.set(key, value);
     };
+
+    /**
+     * Increment value of a specific key by 1.
+     */
+    incr(key: string): void {
+        return this.driver.incr(key);
+    };
+
+    /**
+     * Decrement value of a specific key by 1.
+     */
+    decr(key: string): void {
+        this.driver.decr(key);
+    };
 }

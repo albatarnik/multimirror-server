@@ -52,4 +52,19 @@ export class SQLiteDatabase implements DatabaseDriver {
             $value: JSON.stringify(value)
         });
     }
+
+
+    /**
+     * Increment value of a specific key by 1.
+     */
+    incr(key: string): void {
+
+    }
+
+    /**
+     * Decrement value of a specific key by 1.
+     */
+    decr(key: string): void {
+
+    }
 }
