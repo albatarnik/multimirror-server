@@ -221,30 +221,38 @@ export class EchoServer {
      */
     onConnect(): void {
         this.server.io.on('connection', socket => {
-  
-            this.onSubscribe(socket);
-            this.onUnsubscribe(socket);
-            this.onDisconnecting(socket);
-            this.onClientEvent(socket);
+
+            this.server.io.use(async(socket, next) => {
+                
+                try {
+                    let appId = socket.handshake.query.app_id;
+                    if(appId)
+                    {
+                        let handler = new SocketHandler(socket,this.db);
+                        handler.connect(appId).then(()=>{
+                            this.onSubscribe(socket);
+                            this.onUnsubscribe(socket);
+                            this.onDisconnecting(socket);
+                            this.onClientEvent(socket);
+                        }).catch(err=>{
+                            console.log(err);
+                        });
+                        next();
+                    }
+                    throw "Authentication error";
+                } catch(e) {
+                    return next(new Error('Authentication error'));
+                }
+            });
         });
     }
-
-
-    
-
     /**
      * On subscribe to a channel.
      */
     onSubscribe(socket: any): void {
  
         socket.on('subscribe', data => {
-            let _that = this;
-            this.socketHandler = new SocketHandler(socket,this.db);
-            this.socketHandler.checkOnSubscribe(data).then(res=>{
-                _that.channel.join(socket, data);
-            }).catch((error) => {
-                console.log(error);
-              });
+            this.channel.join(socket, data);
         });
     }
 
@@ -254,9 +262,6 @@ export class EchoServer {
     onUnsubscribe(socket: any): void {
         socket.on('unsubscribe', data => {
             this.channel.leave(socket, data.channel, 'unsubscribed');
-
-            this.socketHandler = new SocketHandler(socket,this.db);
-            this.socketHandler.removeByApp(data);
         });
     }
 
@@ -267,13 +272,14 @@ export class EchoServer {
      */
     onDisconnecting(socket: any): void {
         socket.on('disconnecting', (reason) => {
+          
+            let handler = new SocketHandler(socket,this.db);
+            handler.disconnect(socket.handshake.query.app_id);
             Object.keys(socket.rooms).forEach(room => {
                 if (room !== socket.id) {
                     this.channel.leave(socket, room, reason);
                 }
             });
-            this.socketHandler = new SocketHandler(socket,this.db);
-            this.socketHandler.remove();
         });
     }
 
