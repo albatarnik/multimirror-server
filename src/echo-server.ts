@@ -221,29 +221,23 @@ export class EchoServer {
      */
     onConnect(): void {
         this.server.io.on('connection', socket => {
+            
 
-            this.server.io.use(async(socket, next) => {
-                
-                try {
-                    let appId = socket.handshake.query.app_id;
-                    if(appId)
-                    {
-                        let handler = new SocketHandler(socket,this.db);
-                        handler.connect(appId).then(()=>{
-                            this.onSubscribe(socket);
-                            this.onUnsubscribe(socket);
-                            this.onDisconnecting(socket);
-                            this.onClientEvent(socket);
-                        }).catch(err=>{
-                            console.log(err);
-                        });
-                        next();
-                    }
-                    throw "Authentication error";
-                } catch(e) {
-                    return next(new Error('Authentication error'));
-                }
-            });
+            let appId = socket.handshake.query.app_id;
+            if(appId)
+            {
+                let handler = new SocketHandler(socket,this.db);
+                handler.connect(appId).then(()=>{
+                    this.onSubscribe(socket);
+                    this.onUnsubscribe(socket);
+                    this.onDisconnecting(socket);
+                    this.onClientEvent(socket);
+                }).catch(err=>{
+                    console.log(err);
+                });
+
+            }
+
         });
     }
     /**
