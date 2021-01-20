@@ -1,12 +1,23 @@
+import {Database} from "./database";
+
 var fs = require('fs');
 var http = require('http');
 var https = require('https');
 var express = require('express');
 var url = require('url');
 var io = require('socket.io');
-import { Log } from './log';
+import {Log} from './log';
+
+const axios = require('axios').default;
 
 export class Server {
+
+    /**
+     * Database instance.
+     */
+    db: Database;
+
+
     /**
      * The http server.
      *
@@ -24,7 +35,9 @@ export class Server {
     /**
      * Create a new server instance.
      */
-    constructor(private options) { }
+    constructor(private options) {
+        this.db = new Database(options);
+    }
 
     /**
      * Start the Socket.io server.
@@ -92,13 +105,14 @@ export class Server {
         });
     }
 
+
     /**
      * Create a socket.io server.
      *
      * @return {any}
      */
     httpServer(secure: boolean) {
-        console.log('httpServer')
+      
         this.express = express();
         this.express.use((req, res, next) => {
             for (var header in this.options.headers) {
@@ -115,6 +129,7 @@ export class Server {
 
         httpServer.listen(this.getPort(), this.options.host);
 
+
         this.authorizeRequests();
 
         return this.io = io(httpServer, this.options.socketio);
@@ -125,11 +140,11 @@ export class Server {
      */
     authorizeRequests(): void {
         console.log('authorizeRequests')
-        this.express.param('appId', (req, res, next) => {
-            if (!this.canAccess(req)) {
+        this.express.param('appId', async (req, res, next) => {
+            let can_access = await this.canAccess(req);
+            if (!can_access) {
                 return this.unauthorizedResponse(req, res);
             }
-
             next();
         });
     }
@@ -140,21 +155,13 @@ export class Server {
      * @param  {any} req
      * @return {boolean}
      */
-    canAccess(req: any): boolean {
+    async canAccess(req: any) {
         let appId = this.getAppId(req);
         let key = this.getAuthKey(req);
 
-        if (key && appId) {
-            let client = this.options.clients.find((client) => {
-                return client.appId === appId;
-            });
+        let client = await this.db.get(appId + "_subscription");
 
-            if (client) {
-                return client.key === key;
-            }
-        }
-
-        return false;
+        return client.app_secret === key;
     }
 
     /**
@@ -199,7 +206,7 @@ export class Server {
      */
     unauthorizedResponse(req: any, res: any): boolean {
         res.statusCode = 403;
-        res.json({ error: 'Unauthorized' });
+        res.json({error: 'Unauthorized'});
 
         return false;
     }

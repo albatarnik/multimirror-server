@@ -1,8 +1,9 @@
 import {PresenceChannel} from './presence-channel';
 import {PrivateChannel} from './private-channel';
 import {Log} from './../log';
+
 var crypto = require('crypto');
-import { RedisDatabase } from '../database/redis';
+import {RedisDatabase} from '../database/redis';
 import {Database} from "../database";
 
 export class Channel {
@@ -36,13 +37,13 @@ export class Channel {
      * Presence channel instance.
      */
     presence: PresenceChannel;
-    
+
     /**
      * Create a new channel instance.
      */
     constructor(private io, private options) {
         this.db = new Database(options);
-       
+
         this.private = new PrivateChannel(options);
         this.presence = new PresenceChannel(io, options);
 
@@ -57,28 +58,26 @@ export class Channel {
      */
     join(socket, data): void {
         this.appId = data.app_id;
-    
 
-    
+
         this.db.get(this.appId).then(client_concurrent_connections => {
 
-          //  Log.info('client_concurrent_connections=' + client_concurrent_connections);
-        if(client_concurrent_connections > 2)
-        {
-           /* Log.error('Concurrent connections exceeded');
-            this.io.sockets.to(socket.id)
-                .emit('subscription_error', data.channel, 'the number of concurrent connections exceeded within the current subscription plan!');
-            return;*/
-        }
+            //  Log.info('client_concurrent_connections=' + client_concurrent_connections);
+            if (client_concurrent_connections > 2) {
+                /* Log.error('Concurrent connections exceeded');
+                 this.io.sockets.to(socket.id)
+                     .emit('subscription_error', data.channel, 'the number of concurrent connections exceeded within the current subscription plan!');
+                 return;*/
+            }
 
-        if (!this.isPrivate(data.channel)) {
-            Log.success('Socket is opened! for a public channel (' + data.channel + ')');
-            socket.join(data.channel);
-            this.onJoin(socket, data.channel);
-        } else
-            this.joinPrivate(socket, data);
+            if (!this.isPrivate(data.channel)) {
+                Log.success('Socket is opened! for a public channel (' + data.channel + ')');
+                socket.join(data.channel);
+                this.onJoin(socket, data.channel);
+            } else
+                this.joinPrivate(socket, data);
 
-       });
+        });
     }
 
     /**
@@ -107,7 +106,7 @@ export class Channel {
      */
     leave(socket: any, channel: string, reason: string): void {
         //Decrement the connection concurrent count of the given client
-     //   this.db.decr(this.appKey);
+        //   this.db.decr(this.appKey);
 
         if (channel) {
             if (this.isPresence(channel)) {
@@ -148,30 +147,33 @@ export class Channel {
         let app_id = info[0];
         let received_hash = info [1];
 
-     
-        let secret_key = this.getClientSecret(app_id);
-        if (secret_key == null) {
-            Log.error('Invalid client identification');
-            this.io.sockets.to(socket.id)
-                .emit('subscription_error', data.channel, 'Invalid client identification!');
-            return;
-        }
 
-        //trying to verify the given signature
-        let client_hash = this.getSocketHash(socket_id, data.channel, secret_key);
+        this.getClientSecret(app_id).then(client => {
+            console.log('receved sec ', client.app_secret);
+            let secret_key = client.app_secret;
+            if (secret_key == null) {
+                Log.error('Invalid client identification');
+                this.io.sockets.to(socket.id)
+                    .emit('subscription_error', data.channel, 'Invalid client identification!');
+                return;
+            }
+
+            //trying to verify the given signature
+            let client_hash = this.getSocketHash(socket_id, data.channel, secret_key);
 
 
-        if (client_hash == received_hash) {
-            Log.success('Valid signature!');
-            Log.success('Socket is opened! for a private channel (' + data.channel + ')');
-            socket.join(data.channel);
-            this.onJoin(socket, data.channel);
-        }
-        else {
-            Log.error('Invalid signature!');
-            this.io.sockets.to(socket.id)
-                .emit('subscription_error', data.channel, 'Invalid signature!');
-        }
+            if (client_hash == received_hash) {
+                Log.success('Valid signature!');
+                Log.success('Socket is opened! for a private channel (' + data.channel + ')');
+                socket.join(data.channel);
+                this.onJoin(socket, data.channel);
+            }
+            else {
+                Log.error('Invalid signature!');
+                this.io.sockets.to(socket.id)
+                    .emit('subscription_error', data.channel, 'Invalid signature!');
+            }
+        });
     }
 
 
@@ -186,7 +188,7 @@ export class Channel {
      * On join a channel log success.
      */
     onJoin(socket: any, channel: string): void {
-      
+
         if (this.options.devMode) {
             Log.info(`[${new Date().toISOString()}] - ${socket.id} joined channel: ${channel}`);
         }
@@ -238,11 +240,10 @@ export class Channel {
      * @param {string} app_id
      * @returns {string}
      */
-    getClientSecret(app_id: string): string {
-        for (const client of this.options.clients) {
-            if (client.appId == app_id)
-                return client.key;
-        }
-        return null
+    async getClientSecret(app_id: string) {
+        console.log('app_id', app_id);
+        let client_secret = await this.db.get(app_id + "_subscription");
+
+        return client_secret;
     }
 }

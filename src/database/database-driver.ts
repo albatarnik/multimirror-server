@@ -21,4 +21,10 @@ export interface DatabaseDriver {
      * Decrement value of a specific key by 1.
      */
     decr(key: string): void;
+
+
+    /**
+     * Get all keys by pattern
+     */
+    keys(key: string): Promise<any>;
 }

@@ -1,14 +1,16 @@
+import { Database } from '../database';
 import { Log } from './../log';
 import { Subscriber } from './subscriber';
 var url = require('url');
 
 export class HttpSubscriber implements Subscriber {
+    
     /**
      * Create new instance of http subscriber.
      *
      * @param  {any} express
      */
-    constructor(private express, private options) { }
+    constructor(private express, private options,private db) { }
 
     /**
      * Subscribe to events to broadcast.
@@ -83,8 +85,9 @@ export class HttpSubscriber implements Subscriber {
             if (this.options.devMode) {
                 Log.info("Channel: " + channels.join(', '));
                 Log.info("Event: " + message.event);
+                Log.info("App: " + req.params.appId);
             }
-
+            this.increaseMessages(req.params.appId);
             channels.forEach(channel => broadcast(channel, message));
         } else {
             return this.badResponse(
@@ -95,6 +98,15 @@ export class HttpSubscriber implements Subscriber {
         }
 
         res.json({ message: 'ok' })
+    }
+
+    increaseMessages(appId)
+    {
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var yyyy = today.getFullYear();
+        this.db.incr(appId+'_messages_'+yyyy+'-'+mm+'-'+dd);
     }
 
     /**

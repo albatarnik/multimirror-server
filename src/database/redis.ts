@@ -51,4 +51,22 @@ export class RedisDatabase implements DatabaseDriver {
     decr(key: string): void {
         this._redis.decr(key);
     }
+
+    /**
+     * Get all keys by pattern
+     */
+    keys(key: string):  Promise<any>{
+        return this._redis.pipeline([
+            ['keys',key]
+        ]).exec((err, result) => {
+            return new Promise<any>((resolve, reject) => {
+                if (err)
+                {
+                    reject(err);
+                }
+                else
+                    resolve(result);
+            });
+        });
+    }
 }

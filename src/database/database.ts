@@ -52,4 +52,12 @@ export class Database implements DatabaseDriver {
     decr(key: string): void {
         this.driver.decr(key);
     };
+
+
+    /**
+     * Decrement value of a specific key by 1.
+     */
+    keys(key: string):  Promise<any> {
+        return this.driver.keys(key);
+    };
 }

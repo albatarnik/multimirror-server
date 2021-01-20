@@ -107,6 +107,27 @@ export class EchoServer {
                     resolve(this);
                 }, error => Log.error(error));
             }, error => Log.error(error));
+
+            this.resetApplicationsInRedis();
+        });
+    }
+
+
+    resetApplicationsInRedis(){
+        this.db.keys('*_current_connections').then(res=>{
+            try{
+
+                let list = res[0][1];
+                for(let i = 0 ; i < list.length ; i++)
+                {
+                    this.db.set(list[i],0);
+                }
+                Log.success(`Resetting concurrent connections`);
+            }
+            catch (e)
+            {
+                console.log(e);
+            }
         });
     }
 
@@ -120,7 +141,7 @@ export class EchoServer {
 
             this.subscribers = [];
             if (this.options.subscribers.http)
-                this.subscribers.push(new HttpSubscriber(this.server.express, this.options));
+                this.subscribers.push(new HttpSubscriber(this.server.express, this.options,this.db));
             if (this.options.subscribers.redis)
                 this.subscribers.push(new RedisSubscriber(this.options));
 
@@ -223,7 +244,7 @@ export class EchoServer {
         this.server.io.on('connection', socket => {
             
 
-            let appId = socket.handshake.query.app_id;
+            let appId = socket.handshake.query.app_key;
             if(appId)
             {
                 let handler = new SocketHandler(socket,this.db);
@@ -268,7 +289,7 @@ export class EchoServer {
         socket.on('disconnecting', (reason) => {
           
             let handler = new SocketHandler(socket,this.db);
-            handler.disconnect(socket.handshake.query.app_id);
+            handler.disconnect(socket.handshake.query.app_key);
             Object.keys(socket.rooms).forEach(room => {
                 if (room !== socket.id) {
                     this.channel.leave(socket, room, reason);

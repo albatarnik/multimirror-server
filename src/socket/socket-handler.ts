@@ -38,6 +38,7 @@ export class SocketHandler {
 
     connect(appId): Promise<any>
     {
+        console.log(appId);
         this.incrementConnections(appId);
         return this.db.get(appId+'_subscription').then(async (res)=>{
             if(!res)

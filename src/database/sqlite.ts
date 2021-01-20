@@ -67,4 +67,11 @@ export class SQLiteDatabase implements DatabaseDriver {
     decr(key: string): void {
 
     }
+
+    /**
+     * Get all keys by pattern
+     */
+    keys(key: string): Promise<any>{
+        return null;
+    }
 }
