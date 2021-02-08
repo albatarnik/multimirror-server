@@ -106,7 +106,8 @@ export class HttpSubscriber implements Subscriber {
         var dd = String(today.getDate()).padStart(2, '0');
         var mm = String(today.getMonth() + 1).padStart(2, '0');
         var yyyy = today.getFullYear();
-        this.db.incr(appId+'_messages_'+yyyy+'-'+mm+'-'+dd);
+        var hour = String(today.getHours() + 1).padStart(2, '0');
+        this.db.incr(appId+'_messages_'+yyyy+'-'+mm+'-'+dd+' '+(hour)+':00:00');
     }
 
     /**

@@ -161,7 +161,7 @@ export class Server {
 
         let client = await this.db.get(appId + "_subscription");
 
-        return client.app_secret === key;
+        return client && client.app_secret === key;
     }
 
     /**
